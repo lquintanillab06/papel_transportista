@@ -1,0 +1,12 @@
+{
+    "FILE_NAME": "config.json",
+    "SECRET_KEY": "django-insecure-3x^5-h3rrn$8%e-opt)q)2i$@po@t_1$v6+jcfwyo929d1b)kg",
+    "DB_NAME": "transportista",
+    "USER": "root",
+    "HOST": "10.10.1.121",
+    "PASSWORD": "Paproot_83",
+    "EDICOM_USER": "PAP830101CR3",
+    "EDICOM_PASSWORD": "yqjvqfofb",
+    "MAIL_JET_USER": "1d98821252f0e19ba4d9a6f678a8f129",
+    "MAIL_JET_PASSWORD": "4b7f29ef7df2f51dc497f3490a008cd3"
+}
