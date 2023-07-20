@@ -1,4 +1,4 @@
-from importlib import import_module
+
 from django.db import models
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -6,7 +6,9 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 
 from .managers import UserManager
 
-# Create your models here.
+from applications.transportista.models import Sucursal
+
+
 
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.BigAutoField(primary_key=True)
@@ -30,6 +32,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     nip = models.CharField(max_length=12, blank=True, null=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    sucursal = models.ForeignKey(Sucursal,models.DO_NOTHING,null=True)
     
     USERNAME_FIELD = 'username'
 

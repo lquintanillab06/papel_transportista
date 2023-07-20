@@ -4,11 +4,11 @@ import ssl
 import base64
 import zipfile
 import json
-
+import io
 
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-import io
+from django.core.exceptions import ImproperlyConfigured
 
 
 class EdicomService:
@@ -50,10 +50,9 @@ class EdicomService:
                         xml.write(xmlTxt)
 
 
-    def cancelCfdi(self, cancelacion):
+    def cancelCfdi_old(self, cancelacion):
         #print(cancelacion)
         self.client.add_prefix('xmlns:cfdi','http://cfdi.service.ediwinws.edicom.com')
-        empresa = Empresa.objects.get(id='99159e28-c969-11e7-84b5-5065f368f0c2')
         user = self.USER,
         password = self.PASSWORD
         rfcE = cancelacion["rfc_emisor"]
@@ -67,10 +66,30 @@ class EdicomService:
         #pfx= base64.b64encode(empresa.certificado_digital_pfx)
         pfxPassword = 'Pap315a'
         test = False
-        result = self.client.service.cancelCFDiAsync(user, password, rfcE, rfcR, uuid, total, pfx, pfxPassword, test)
+        #result = self.client.service.cancelCFDiAsync(user, password, rfcE, rfcR, uuid, total, pfx, pfxPassword, test)
         #print(result)
         #archivoZip = base64.b64decode(result)
-        #print(archivoZip) 
+        #print(archivoZip)
+        # 
+
+    def cancelCfdi(self, cancelacion, facturista):
+        print("Cancelando el CFDI")
+        self.client.add_prefix('xmlns:cfdi','http://cfdi.service.ediwinws.edicom.com')
+        user = self.USER,
+        password = self.PASSWORD
+        rfcE = cancelacion.emisor_rfc
+        rfcR = cancelacion.receptor_rfc
+        uuid = 'C6526106-7E57-11EE-9ADA-5711C98CE2FB'
+        total = cancelacion.total
+        cert_file = facturista.certificado_digital_pfx
+        cert = base64.b64encode(cert_file)  
+        pfx= cert.decode() 
+        pfxPassword = 'Pap315a'
+        test = True
+        result = self.client.service.cancelCFDiAsync(user, password, rfcE, rfcR, uuid, total, pfx, pfxPassword,'03','',test)
+        print(result)
+        archivoZip = base64.b64decode(result)
+        print(archivoZip)
 
     def get_config(self,variable, config = None):
         if config ==None:
@@ -82,3 +101,21 @@ class EdicomService:
             raise ImproperlyConfigured(msg)
 
         
+
+    def getUUID(self):
+        user = self.USER,
+        password = self.PASSWORD
+        uuid ="C6526106-7E57-11EE-9ADA-5711C98CE2FB"
+        rfc ="OILJ710506MV4"
+        result = self.client.service.getCfdiFromUUID(user, password, rfc, uuid);
+        archivoZip = base64.b64decode(result)
+        with zipfile.ZipFile(io.BytesIO(archivoZip)) as thezip:
+            for zipinfo in thezip.infolist():
+                with thezip.open(zipinfo) as thefile:
+                    #print(thefile)
+                    xmlTxt = thefile.read().decode('utf-8')
+                    print(xmlTxt)
+                    return xmlTxt
+                    with open(f"xml/zip/myFAc.xml",'w') as xml:
+                        xml.write(xmlTxt)
+        return result

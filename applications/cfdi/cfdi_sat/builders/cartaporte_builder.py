@@ -41,12 +41,13 @@ class CartaPorteBuilder():
     def build_comprobante(self):
         serie_cfdi = self.embarque.facturista.serie_cfdi
         self.comprobante.Version = self.embarque.facturista.version_de_cfdi
-        self.comprobante.NoCertificado = '00001000000516081309'
+        self.comprobante.NoCertificado = self.embarque.facturista.numero_de_certificado
         self.comprobante.TipoDeComprobante = CTipoDeComprobante.I
         self.comprobante.Serie = serie_cfdi
         self.comprobante.Fecha = DateUtils.getNowFormatted()
         self.comprobante.Moneda = MonedaUtils.monedaResolve('MXN')
         self.comprobante.Folio = Folio.objects.get_next_folio(serie_cfdi)
+        Folio.objects.set_folio(serie_cfdi)
         self.comprobante.Exportacion = "01"
         self.comprobante.LugarExpedicion = self.embarque.sucursal.direccion_codigo_postal
         self.comprobante.FormaPago = "99"

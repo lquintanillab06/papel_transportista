@@ -190,8 +190,7 @@ def imprimir_cfdi(xml,cadena):
     pdf.cell(w=2.5,h=0.35,txt="SERIE Y FOLIO",align = "C", fill = 1,border = 1,ln=1)
     pdf.set_text_color(r= 0, g= 0, b = 0)
     pdf.cell(w=8.5,h=0.35,txt="",align = "C", fill = 0, border=0)
-    #pdf.cell(w=8.5,h=0.35,txt=f"{timbrado['UUID']}",align = "C", fill = 0)
-    pdf.cell(w=8.5,h=0.35,txt=f"test",align = "C", fill = 0)
+    pdf.cell(w=8.5,h=0.35,txt=f"{timbrado['UUID']}",align = "C", fill = 0)
     pdf.cell(w=2.5,h=0.35,txt=f"{comprobante['Serie']} - {comprobante['Folio']}",align = "C", fill = 0, ln=1,border="R")
 
 

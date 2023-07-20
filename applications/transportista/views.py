@@ -1,19 +1,24 @@
 from django.shortcuts import render
+import base64
 from django.http import HttpResponse
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.parsers import FileUploadParser
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 
-from .services import crear_ingreso, getXmlDictionary, getXml, cancelarEmbarque, imprimir_carta_porte, getXmlDictionaryFromXml,enviar_email_cfdi
-from .models import Embarque, Cfdi
+from .services import (crear_ingreso, getXmlDictionary, getXml, cancelarEmbarque, imprimir_carta_porte, getXmlDictionaryFromXml,enviar_email_cfdi
+                       ,cancelarCfdi)
+
+from .models import Embarque, Cfdi, Sucursal,FacturistaEmbarques
 from .serializers import EmbarquesSerializer
 
 
 from django.views.generic import ListView
-from .models import Sucursal
+
+
 
 
 class EmbarquesPendientes(ListAPIView):   
@@ -74,10 +79,12 @@ class CfdiCancelados(ListAPIView):
 @api_view(['POST'])
 def generarCfdiCartaPorte(request):
     if request.method  == 'POST':
-        #print(request.data)
-        #print(request.query_params['embarque'])
+     
         embarque_id = request.query_params['embarque']
         resp =  crear_ingreso(embarque_id)
+        if resp.get('message'):
+            return Response({'message':resp['message']})
+        
         xml = resp['xmlTimbrado']
         cfdi =  resp['cfdi']
         xmlDictionary = getXmlDictionaryFromXml(xml)
@@ -148,16 +155,29 @@ def imprimir_cfdi_cartaporte(request):
 @api_view(['GET'])
 def enviar_email(request):
     #print("Enviando el Email del CFDI")
-    cfdiId = request.query_params.get('cfd')
     embarqueId = request.query_params.get('embarque')
     if embarqueId:
         embarqueId = embarqueId.replace("-","")
+        embarque = Embarque.objects.get(pk = embarqueId)
+        email = embarque.cliente.email
+        email_facturista = embarque.facturista.email
         #print('Ejecutando la vista para la impresion de la carta porte del embarque',embarqueId)
         cfdi = Cfdi.objects.get(origen = embarqueId)
         cfdiId = cfdi.id
-    enviar_email_cfdi(cfdiId)
+        enviar_email_cfdi(cfdiId, email, email_facturista)
     return Response({'Respuesta': 'Exitoso!!!!!!'})
 
+
+@api_view(['POST'])
+def cancelar_cfdi(request):
+    print(request.data.get('id'))
+    embarque_id = request.data.get('id').replace ("-","")
+    embarque = Embarque.objects.get(pk = embarque_id)
+    facturista = embarque.facturista
+    cfdi = Cfdi.objects.get(origen = embarque_id)
+    cancelarCfdi(cfdi, facturista)
+    
+    return Response({'cacncelacion':'successfull'})
 
 class TestViews(ListView):
     template_name = 'index.html'
@@ -186,3 +206,86 @@ class TestViews(ListView):
         return context
    
 
+"""
+    Vistas para cargar y leer archivos de CFDI
+"""
+
+@api_view(['GET'])
+def get_key(request,facturista_id):
+   print("Obteniendo la llave privada")
+   facturista = FacturistaEmbarques.objects.filter(pk=facturista_id).first()
+   print(facturista)
+   print(facturista.llave_privada)
+   return Response({"Key":facturista.llave_privada}) 
+
+
+@api_view(['GET'])
+def get_cert(request,facturista_id):
+    pass
+    ''' facturista = Contribuyente.objects.filter(pk=facturista_id).first()
+    cert_file = contribuyente.certificado_digital
+    cert = base64.b64encode(cert_file)
+    return Response({"Value":"Test"}) '''
+
+@api_view(['GET'])
+def get_pfx(request,facturista_id):
+    pass
+    ''' contribuyente = Contribuyente.objects.filter(pk=facturista_id).first()
+    pfx_file = contribuyente.certificado_digital_pfx
+    cert = base64.b64encode(pfx_file)
+    return Response({"Value":"Test"}) '''
+
+@api_view(['GET'])
+def get_numero_certificado(request,facturista_id):
+    pass
+    ''' contribuyente = Contribuyente.objects.filter(pk=facturista_id).first()
+    numero_certificado = contribuyente.numero_certificado
+    print(request.accepted_media_type)
+    return Response({"Value":numero_certificado}) '''
+
+@api_view(['POST'])
+def set_numero_certificado(request,facturista_id):
+    pass
+    ''' contribuyente = Contribuyente.objects.filter(pk=contribuyente_id).first()
+    numero_certificado = request.query_params['numero_certificado']
+    contribuyente.numero_certificado = numero_certificado
+    contribuyente.save()
+    return Response({"Value":"The number was updated successfully"}) '''
+
+class UploadCertView(APIView):
+    pass
+    parser_classes=[FileUploadParser]
+
+    def post(self, request,facturista_id, filename, format=None):
+        cert_file  = request.data['file'].read()
+        contribuyente = FacturistaEmbarques.objects.filter(pk=facturista_id).first()
+        contribuyente.certificado_digital = cert_file
+        contribuyente.save()
+        return Response({"Message": "The certified was updated successfully"}) 
+
+class UploadKeyView(APIView):
+
+    parser_classes=[FileUploadParser]
+
+    def post(self, request,facturista_id, filename, format=None):
+        print(type(request.data['file']))
+        key_file  = request.data['file'].read()
+        contribuyente = FacturistaEmbarques.objects.filter(pk=facturista_id).first()
+        contribuyente.llave_privada = key_file
+        contribuyente.save()
+        return Response({"Texto": "The key was updated successfully"})
+    
+
+class UploadPfxView(APIView):
+    pass
+
+    parser_classes=[FileUploadParser]
+
+    def post(self, request,facturista_id, filename, format=None):
+        print(type(request.data['file']))
+        pfx_file  = request.data['file'].read()
+        facturista = FacturistaEmbarques.objects.filter(pk=facturista_id).first()
+        facturista.certificado_digital_pfx= pfx_file
+        facturista.save()
+        print(request.accepted_media_type)
+        return Response({"Message": "The pfx was updated successfully"}) 

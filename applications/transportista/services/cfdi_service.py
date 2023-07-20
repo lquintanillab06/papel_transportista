@@ -5,6 +5,7 @@ import xmltodict
 import json
 from mailjet_rest import Client
 from .print_service import imprimir_carta_porte_envio
+import xml.etree.ElementTree as ET
 
 def crear_cfdi(comprobante, xml, cadena, embarque):
     cfdi = Cfdi()
@@ -54,7 +55,15 @@ def getXmlDictionaryFromXml(xml):
     xmlJson = json.dumps(xmlDict)
     return xmlDict
 
-def enviar_email_cfdi(cfdiId):
+def getXmlData(xml):
+    ns = {'cfdi': "http://www.sat.gob.mx/cfd/4" ,'cartaporte20':'http://www.sat.gob.mx/CartaPorte20','tfd': 'http://www.sat.gob.mx/TimbreFiscalDigital'}
+    tree = ET.fromstring(xml) 
+    timbrado = tree.find('.//tfd:TimbreFiscalDigital', ns).attrib
+    UUID = timbrado['UUID']
+    return UUID
+
+
+def enviar_email_cfdi(cfdiId,email,email_facturista):
     pdf,xml = imprimir_carta_porte_envio(cfdiId)
     pdfB64 = base64.b64encode(pdf).decode()
     xml_bytes = xml.encode('utf-8')
@@ -73,13 +82,17 @@ def enviar_email_cfdi(cfdiId):
                     },
                     "To":[
                         {
-                            "Email": "lquintanillab@gmail.com",
-                            "Name": "Luis Quintanilla"
+                            "Email": email,
+                            "Name": email
+                        },
+                        {
+                            "Email": email_facturista,
+                            "Name": email_facturista
                         }
                     ],
-                    "Subject": "My first Mailjet Email!",
-                    "TextPart": "Greetings from Mailjet!",
-                    "HTMLPart": "<h3>Dear passenger 1, welcome to <a href=\"https://www.mailjet.com/\">Mailjet</a>!</h3><br />May the delivery force be with you!",
+                    "Subject": "Envio de Cfdi Carta Porte",
+                    "TextPart": "Apreciable cliente por este medio le hacemos llegar la factura electrónica de su compra. Este correo se envía de manera autmática favor de no responder a la dirección del mismo.",
+                    "HTMLPart": "",
                     "Attachments": [
                                 {
 										"ContentType": "application/pdf",
@@ -102,3 +115,4 @@ def enviar_email_cfdi(cfdiId):
         result = mailjet.send.create(data=data)
         #print(result.status_code)
         #print(result.json())
+

@@ -17,4 +17,13 @@ urlpatterns = [
     path('api/enviar_email', views.enviar_email),
     path('test_views/<prueba>/<otro>',views.TestViews.as_view()),
     path('api/cfdi_cancelados', views.CfdiCancelados.as_view() ),
+    path('api/cancelar_cfdi', views.cancelar_cfdi, name='cancelar_cfdi' ),
+    path("api/get_key/<str:facturista_id>",views.get_key, name="get_key"),
+    path("api/get_cert/<str:facturista_id>",views.get_cert, name="get_cert"),
+    path("api/get_pfx/<str:facturista_id>",views.get_pfx, name="get_pfx"),
+    path("api/get_numero_certificado/<str:facturista_id>",views.get_numero_certificado, name="get_numero_certificado"),
+    path("api/set_numero_certificado/<str:facturista_id>",views.set_numero_certificado, name="set_numero_certificado"),
+    path("api/upload_cert_view/<str:facturista_id>/<filename>",views.UploadCertView.as_view(),name="upload_cert_view"),
+    path("api/upload_key_view/<str:facturista_id>/<filename>",views.UploadKeyView.as_view(),name="upload_key_view"),
+    path("api/upload_pfx_view/<str:facturista_id>/<filename>",views.UploadPfxView.as_view(),name="upload_pfx_view"),
 ]

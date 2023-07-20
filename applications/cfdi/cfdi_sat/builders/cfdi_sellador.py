@@ -4,13 +4,14 @@ from Crypto.Signature import  pkcs1_15
 import base64
 import hashlib
 import uuid
+
 #from applications.core.models import Empresa
 
 from applications.transportista.models import FacturistaEmbarques
 
 class CfdiSellador():
    
-   def sellar(self,cadenaOriginal):
+   def sellar_oldy(self,cadenaOriginal):
              
       # print ("---------- Cadena ---------------")
       # print(cadenaOriginal)
@@ -62,7 +63,7 @@ class CfdiSellador():
       #return comprobante
 
 
-   def sellar(self,cadenaOriginal, comprobante):
+   def sellar_old(self,cadenaOriginal, comprobante):
              
       #print ("---------- Cadena ---------------")
       #print(cadenaOriginal)
@@ -89,7 +90,19 @@ class CfdiSellador():
       
 
       return comprobante
-      
+   
+   def sellar(self,cadenaOriginal, comprobante, facturista):
+      cert_file = facturista.certificado_digital
+      cert = base64.b64encode(cert_file)
+      key = facturista.llave_privada
+      rsakey = RSA.importKey(key)
+      cadenaB = bytes(str(cadenaOriginal), 'utf-8')
+      hash = SHA256.new(cadenaB)
+      signature = pkcs1_15.new(rsakey).sign(hash)
+      firma = base64.b64encode(signature)
+      comprobante.Certificado = cert.decode("utf-8")
+      comprobante.Sello = firma.decode("utf-8")
+      return comprobante
 
 
     
